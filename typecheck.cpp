@@ -68,6 +68,7 @@ void typeError(TypeErrorCode code) {
 
 void TypeCheck::visitProgramNode(ProgramNode* node) {
   // WRITEME: Replace with code if necessary
+  classTable = new ClassTable();
 }
 
 void TypeCheck::visitClassNode(ClassNode* node) {
@@ -124,34 +125,42 @@ void TypeCheck::visitPrintNode(PrintNode* node) {
 
 void TypeCheck::visitPlusNode(PlusNode* node) {
   // WRITEME: Replace with code if necessary
+  node->basetype = bt_integer;
 }
 
 void TypeCheck::visitMinusNode(MinusNode* node) {
   // WRITEME: Replace with code if necessary
+  node->basetype = bt_integer;
 }
 
 void TypeCheck::visitTimesNode(TimesNode* node) {
   // WRITEME: Replace with code if necessary
+  node->basetype = bt_integer;
 }
 
 void TypeCheck::visitDivideNode(DivideNode* node) {
   // WRITEME: Replace with code if necessary
+  node->basetype = bt_integer;
 }
 
 void TypeCheck::visitGreaterNode(GreaterNode* node) {
   // WRITEME: Replace with code if necessary
+  node->basetype = bt_integer;
 }
 
 void TypeCheck::visitGreaterEqualNode(GreaterEqualNode* node) {
   // WRITEME: Replace with code if necessary
+  node->basetype = bt_integer;
 }
 
 void TypeCheck::visitEqualNode(EqualNode* node) {
   // WRITEME: Replace with code if necessary
+  node->basetype = bt_integer;
 }
 
 void TypeCheck::visitAndNode(AndNode* node) {
   // WRITEME: Replace with code if necessary
+  node->basetype = bt_boolean;
 }
 
 void TypeCheck::visitOrNode(OrNode* node) {
@@ -161,11 +170,12 @@ void TypeCheck::visitOrNode(OrNode* node) {
 
 void TypeCheck::visitNotNode(NotNode* node) {
   // WRITEME: Replace with code if necessary
-
+  node->basetype = bt_boolean;
 }
 
 void TypeCheck::visitNegationNode(NegationNode* node) {
   // WRITEME: Replace with code if necessary
+  node->basetype = bt_integer;
 }
 
 void TypeCheck::visitMethodCallNode(MethodCallNode* node) {
@@ -182,10 +192,12 @@ void TypeCheck::visitVariableNode(VariableNode* node) {
 
 void TypeCheck::visitIntegerLiteralNode(IntegerLiteralNode* node) {
   // WRITEME: Replace with code if necessary
+  node->basetype = bt_integer;
 }
 
 void TypeCheck::visitBooleanLiteralNode(BooleanLiteralNode* node) {
   // WRITEME: Replace with code if necessary
+  node->basetype = bt_boolean;
 }
 
 void TypeCheck::visitNewNode(NewNode* node) {
@@ -205,7 +217,7 @@ void TypeCheck::visitBooleanTypeNode(BooleanTypeNode* node) {
 void TypeCheck::visitObjectTypeNode(ObjectTypeNode* node) {
   // WRITEME: Replace with code if necessary
   node->basetype = bt_object;
-  node->objectClassName= node->identifier->name;
+  // node->objectClassName = node->identifier->name;
   // Probably need to do something about the class name here
 }
 
