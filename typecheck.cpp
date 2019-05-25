@@ -73,6 +73,11 @@ void TypeCheck::visitProgramNode(ProgramNode* node) {
 
 void TypeCheck::visitClassNode(ClassNode* node) {
   // WRITEME: Replace with code if necessary
+  ClassInfo a;
+  a.superClassName = node->identifier_2;
+  //a.methods = ???; // Pointer to MethodTable
+  //a.members = ???; // Pointer to VariableTable
+  this.classTable.insert( std::pair<std::string,ClassInfo>(node->identifier_1, a) );
 }
 
 void TypeCheck::visitMethodNode(MethodNode* node) {

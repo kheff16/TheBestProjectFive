@@ -164,8 +164,10 @@ public:
 class ASTNode {
 public:
   // All AST nodes have a member which stores their basetype (int, bool, none, object)
-  //   Further type information will come from the symbol table.
   BaseType basetype;
+  // All AST nodes have a member which stores the class name, applicable if the base type
+  // is object. Otherwise this field may be unused
+  std::string objectClassName;
 
   // All AST nodes provide visit children and accept methods
   virtual void visit_children(Visitor* v) = 0;
@@ -489,8 +491,6 @@ public:
 
   NegationNode(ExpressionNode* expression);
 };
-
-// EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 
 // AST Node for MethodCall
 class MethodCallNode : public ExpressionNode {
