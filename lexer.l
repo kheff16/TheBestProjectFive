@@ -7,50 +7,53 @@
     #include <limits.h>
     #include "ast.hpp"
     #include "parser.hpp"
+    #include <string>
     void yyerror(const char *);
 %}
 
+/* WRITEME: Copy any definitions and start conditions from Project 3 here */
 %x COMMENT
-
 %%
 
-  /* WRITEME: Write your Flex token rules here */
-"/*"                                { BEGIN(COMMENT); }
-<COMMENT>"*/"                       { BEGIN(INITIAL); }
-<COMMENT>.                          ;
-<COMMENT>"\n"                       ;
-<COMMENT><<EOF>>                    { yyerror("dangling comment"); }
+  /* WRITEME: Copy your Flex rules from Project 3 here */
+\/\*                        {BEGIN(COMMENT);}
+<COMMENT>\n                 {;}
+<COMMENT>.                  {;}
+<COMMENT><<EOF>>            {yyerror("Reached EOF in comment.");}
+<COMMENT>\*\/               {BEGIN(INITIAL);}
 
-new                                 { return T_NEW;}
-if                                  { return T_IF;}
-else                                { return T_ELSE;}
-while                               { return T_WHILE;}
-and                                 { return T_AND;}
-or                                  { return T_OR;}
-not                                 { return T_NOT;}
-extends                             { return T_EXTENDS;}
-do                                  { return T_DO;}
-integer                             { return T_INTEGER;}
-equals                              { return T_EQUALS; }
-boolean                             { return T_BOOLEAN;}
-true                                { IntegerNode* a = new IntegerNode(1); yylval.booleanliteral_ptr = new BooleanLiteralNode(a); return T_TRUE;}
-false                               { IntegerNode* b = new IntegerNode(0); yylval.booleanliteral_ptr = new BooleanLiteralNode(b); return T_FALSE;}
-none                                { return T_NONE;}
-print                               { return T_PRINT;}
-return                              { return T_RETURN; }
-0|([1-9][0-9]*)                     { yylval.integer_ptr = new IntegerNode(std::atoi(yytext)); return T_NUM;}
-[\+]                                { return T_PLUS;}
-->                                  { return T_ARROW; } 
-[\-]                                { return T_MINUS; }
->=                                  { return T_GTE; }
-=                                   { return T_EQUAL; }
->                                   { return T_GT; }
-[\/]                                { return T_DIVIDE; }     
-[\*]                                { return T_MULTIPLY; }
-[ \t\n]                             ; // Skip white space */
-[a-zA-Z][0-9a-zA-Z]*                { yylval.identifier_ptr = new IdentifierNode(yytext); return T_ID;}
-[\(\)\{\}\/\,\;\.]                  { return *yytext;}
-.                                   { yyerror("invalid character"); }
+
+
+
+[[:space:]\n\t]+            {;}
+
+
+
+
+
+equals                      {return T_equals;}
+>=                          {return T_geq;}
+->                          {return T_arrow;}
+[\+\-\*\/>=\(\)\{\};\.,]    {return *yytext;}
+and                         {return T_and;}
+or                          {return T_or;}
+not                         {return T_not;}
+true                        {return T_true;}
+false                       {return T_false;}
+new                         {return T_new;}
+if                          {return T_if;}
+else                        {return T_else;}
+while                       {return T_while;}
+do                          {return T_do;}
+print                       {return T_print;}
+extends                     {return T_extends;}
+return                      {return T_return;}
+none                        {return T_none;}
+boolean                     {return T_bool;}
+integer                     {return T_integer;}
+[a-zA-Z][a-zA-Z0-9]*        {std::string x(yytext); yylval.identifier_ptr = new IdentifierNode(x); return T_id;}
+0|([1-9][0-9]*)             {long int value = strtol(yytext, NULL, 0); yylval.integer_ptr = new IntegerNode((int)value); return T_number;}
+.                           { yyerror("invalid character"); }
 
 %%
 
