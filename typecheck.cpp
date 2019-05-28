@@ -141,10 +141,13 @@ void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
     // METHOD VARIABLE
   }
   
-  node->basetype = node->type->basetype; 
+  node->basetype = node->type->basetype;
   IdentifierNode* pIN = node->identifier_list->front();
-  node->objectClassName = pIN->name;
+  std::string name = pIN->name;
   delete pIN;
+  if(node->basetype == bt_object) {
+    node->objectClassName = node->type->objectClassName;
+  } 
   CompoundType c;
   VariableInfo v;
   c.baseType = node->basetype;
@@ -152,12 +155,16 @@ void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
   v.type = c;
   //v.offset = ?;
   //v.size = ?;
-  currentVariableTable->insert( std::pair<std::string, VariableInfo> (node->objectClassName, v));
+  currentVariableTable->insert( std::pair<std::string, VariableInfo> (name, v));
 
 }
 
 void TypeCheck::visitReturnStatementNode(ReturnStatementNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  node->basetype = node->expression->basetype;
+
+
 }
 
 void TypeCheck::visitAssignmentNode(AssignmentNode* node) {
