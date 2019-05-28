@@ -482,7 +482,7 @@ void Print::popLevel(bool breaklines = false, bool deindent = false) {
   ss << this->elements->at(0);
   if (breaklines) {
     ss << "\n";
-    for (int i = 0; i < this->indent; i++)
+    for (unsigned int i = 0; i < this->indent; i++)
       ss << " ";
   }
   for (std::vector<std::string>::iterator iter = this->elements->begin()+1; iter != this->elements->end(); iter++) {
@@ -491,7 +491,7 @@ void Print::popLevel(bool breaklines = false, bool deindent = false) {
       ss << ",";
       if (breaklines) {
         ss << "\n";
-        for (int i = 0; i < this->indent; i++)
+        for (unsigned int i = 0; i < this->indent; i++)
           ss << " ";
       } else {
         ss << " ";
@@ -501,7 +501,7 @@ void Print::popLevel(bool breaklines = false, bool deindent = false) {
         if (deindent)
           this->indent -= 1;
         ss << "\n";
-        for (int i = 0; i < this->indent; i++)
+        for (unsigned int i = 0; i < this->indent; i++)
           ss << " ";
       }
     }
@@ -729,12 +729,12 @@ void Print::visitNewNode(NewNode* node) {
 
 // Concrete visit function for IntegerType nodes
 void Print::visitIntegerTypeNode(IntegerTypeNode* node) {
-this->addElement("IntegerType");
+  this->addElement("IntegerType");
 }
 
 // Concrete visit function for BooleanType nodes
 void Print::visitBooleanTypeNode(BooleanTypeNode* node) {
-this->addElement("BooleanType");
+  this->addElement("BooleanType");
 }
 
 // Concrete visit function for ObjectType nodes
@@ -746,7 +746,7 @@ void Print::visitObjectTypeNode(ObjectTypeNode* node) {
 
 // Concrete visit function for None nodes
 void Print::visitNoneNode(NoneNode* node) {
-this->addElement("None");
+  this->addElement("None");
 }
 
 // Concrete visit function for Identifiers (leaf nodes)

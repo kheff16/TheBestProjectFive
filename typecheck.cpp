@@ -68,34 +68,96 @@ void typeError(TypeErrorCode code) {
 
 void TypeCheck::visitProgramNode(ProgramNode* node) {
   // WRITEME: Replace with code if necessary
+  classTable = new ClassTable();
+  node->visit_children(this);
 }
 
 void TypeCheck::visitClassNode(ClassNode* node) {
   // WRITEME: Replace with code if necessary
+  currentVariableTable = NULL;
+  currentClassName = node->identifier_1->name;
+  ClassInfo c;
+  if(node->identifier_2->name.empty()) {
+    c.superClassName = "";
+  }
+  c.superClassName = node->identifier_2->name;
+  c.methods = new MethodTable();
+  node->visit_children(this);
+  currentMethodTable = c.methods;
+  currentVariableTable = c.members;
+  // ??? c.membersSize = c.members.size();
+  classTable->insert(std::pair<std::string, ClassInfo> (currentClassName, c));
+
 }
 
 void TypeCheck::visitMethodNode(MethodNode* node) {
   // WRITEME: Replace with code if necessary
-  // currentVariableTable= ourMethodInfoInstance.variables;
+  node->basetype = node->type->basetype;
+  node->objectClassName = node->identifier->name;
+  //TODO: Is setting objectClassName right when we don't know the exact basetype?
+  MethodInfo m;
+  CompoundType c;
+  c.baseType = node->basetype;
+  c.objectClassName = node->objectClassName;
+  m.returnType = c;
+  m.variables = new VariableTable();
+  m.parameters = new std::list<CompoundType> ();
+  currentVariableTable = m.variables;
+  currentMethodTable->insert(std::pair<std::string, MethodInfo> (node->objectClassName, m));
 }
 
 void TypeCheck::visitMethodBodyNode(MethodBodyNode* node) {
   // WRITEME: Replace with code if necessary
-  node->basetype= node->returnstatement->basetype;
+  node->basetype = node->returnstatement->basetype;
+  
 }
 
 void TypeCheck::visitParameterNode(ParameterNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  node->basetype = node->type->basetype;
+  if(node->basetype == bt_object){
+    node->objectClassName = node->type->objectClassName; 
+  }
+  else{
+     node->objectClassName = "";
+  }
+
+  CompoundType c;
+  c.baseType = node->basetype;
+  c.objectClassName = node ->objectClassName;
+  
+
+
+
 }
 
 void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
   // WRITEME: Replace with code if necessary
-  node->basetype = node->type->basetype;
+  if(currentVariableTable == NULL){
+    // CLASS MEMBER
+  }
+  else{
+    // METHOD VARIABLE
+  }
+  
+  node->basetype = node->type->basetype; 
+  IdentifierNode* pIN = node->identifier_list->front();
+  node->objectClassName = pIN->name;
+  delete pIN;
+  CompoundType c;
+  VariableInfo v;
+  c.baseType = node->basetype;
+  c.objectClassName = node->objectClassName;
+  v.type = c;
+  //v.offset = ?;
+  //v.size = ?;
+  currentVariableTable->insert( std::pair<std::string, VariableInfo> (node->objectClassName, v));
+
 }
 
 void TypeCheck::visitReturnStatementNode(ReturnStatementNode* node) {
   // WRITEME: Replace with code if necessary
-  node->basetype = node->expression->basetype;// what the expression evaluates to
 }
 
 void TypeCheck::visitAssignmentNode(AssignmentNode* node) {
@@ -156,12 +218,10 @@ void TypeCheck::visitAndNode(AndNode* node) {
 
 void TypeCheck::visitOrNode(OrNode* node) {
   // WRITEME: Replace with code if necessary
-  node->basetype = bt_boolean; // Should we check this?
 }
 
 void TypeCheck::visitNotNode(NotNode* node) {
   // WRITEME: Replace with code if necessary
-
 }
 
 void TypeCheck::visitNegationNode(NegationNode* node) {
@@ -205,8 +265,6 @@ void TypeCheck::visitBooleanTypeNode(BooleanTypeNode* node) {
 void TypeCheck::visitObjectTypeNode(ObjectTypeNode* node) {
   // WRITEME: Replace with code if necessary
   node->basetype = bt_object;
-  node->objectClassName= node->identifier->name;
-  // Probably need to do something about the class name here
 }
 
 void TypeCheck::visitNoneNode(NoneNode* node) {
@@ -215,11 +273,12 @@ void TypeCheck::visitNoneNode(NoneNode* node) {
 }
 
 void TypeCheck::visitIdentifierNode(IdentifierNode* node) {
-  // Not sure this one needs code
+  // WRITEME: Replace with code if necessary
+
 }
 
 void TypeCheck::visitIntegerNode(IntegerNode* node) {
-  // Not sure this one needs code
+  // WRITEME: Replace with code if necessary
 }
 
 
