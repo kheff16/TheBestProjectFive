@@ -222,7 +222,7 @@ void TypeCheck::visitParameterNode(ParameterNode* node) {
 
   CompoundType c;
   c.baseType = node->basetype;
-  c.objectClassName = node ->objectClassName;
+  c.objectClassName = node->objectClassName;
   
 
 
@@ -231,6 +231,7 @@ void TypeCheck::visitParameterNode(ParameterNode* node) {
 
 void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
   if(currentVariableTable == NULL){
     // CLASS MEMBER
     currentVariableTable = new VariableTable();
@@ -238,8 +239,6 @@ void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
   }
   else{
     // METHOD VARIABLE
-  }
-  node->visit_children(this);
   node->basetype = node->type->basetype;
   IdentifierNode* pIN = node->identifier_list->front();
   std::string name = pIN->name;
@@ -252,11 +251,13 @@ void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
   c.baseType = node->basetype;
   c.objectClassName = node->objectClassName;
   v.type = c;
-  //v.offset = ?;
-  //v.size = ?;
+  v.offset = 0;
+  v.size = 4;
 
 
-  currentVariableTable->insert( std::pair<std::string, VariableInfo> (name, v));
+  //currentVariableTable->insert( std::pair<std::string, VariableInfo> (name, v));
+  }
+  
 
 }
 
@@ -373,6 +374,7 @@ void TypeCheck::visitBooleanTypeNode(BooleanTypeNode* node) {
 void TypeCheck::visitObjectTypeNode(ObjectTypeNode* node) {
   // WRITEME: Replace with code if necessary
   node->basetype = bt_object;
+  node->objectClassName = node->identifier->name;
 }
 
 void TypeCheck::visitNoneNode(NoneNode* node) {
