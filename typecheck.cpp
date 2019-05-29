@@ -82,7 +82,8 @@ void TypeCheck::visitClassNode(ClassNode* node) {
   c.methods = new MethodTable();
   currentMethodTable = c.methods;
 
-  node->visit_children(this);
+  std::cout << "Calling visit in CLASSNODE\n";
+  node->visit_children(this); // Visits Declaration Node then Method Node
   currentClassName = node->identifier_1->name;
   
   if(node->identifier_2 == NULL) {
@@ -95,28 +96,29 @@ void TypeCheck::visitClassNode(ClassNode* node) {
   c.members = new VariableTable(); 
   currentVariableTable = c.members;
 
-  // MORE WORK TO DO HERE TO ADD CLASS MEMBERS
+  // MORE WORK TO DO HERE TO ADD CLASS MEETHODS
 
-if (node->declaration_list) {
-    for(std::list<DeclarationNode*>::iterator iter = node->declaration_list->begin();
-        iter != node->declaration_list->end(); iter++) {
-      a.baseType = (*iter)->type->basetype;
-      if(a.baseType == bt_object){
-        a.objectClassName = (*iter)->type->objectClassName;
-      }
-      else{
-        a.objectClassName = "";
-      }
-      v.type = a;
-      v.size = 4;
-
-      for(std::list<IdentifierNode*>::iterator itera = (*iter)->identifier_list->begin();
-        itera != (*iter)->identifier_list->end(); itera++){
-          v.offset = currentMemberOffset + v.size;
-          currentMemberOffset += v.size;
-          currentVariableTable->insert(std::pair<std::string, VariableInfo> ((*itera)->name, v));
+  //Here we add the class members
+  if (node->declaration_list) {
+      for(std::list<DeclarationNode*>::iterator iter = node->declaration_list->begin();
+          iter != node->declaration_list->end(); iter++) {
+        a.baseType = (*iter)->type->basetype;
+        if(a.baseType == bt_object){
+          a.objectClassName = (*iter)->type->objectClassName;
         }
-    }
+        else{
+          a.objectClassName = "";
+        }
+        v.type = a;
+        v.size = 4;
+
+        for(std::list<IdentifierNode*>::iterator itera = (*iter)->identifier_list->begin();
+          itera != (*iter)->identifier_list->end(); itera++){
+            v.offset = currentMemberOffset + v.size;
+            currentMemberOffset += v.size;
+            currentVariableTable->insert(std::pair<std::string, VariableInfo> ((*itera)->name, v));
+        }
+      }
   }
 
 
@@ -127,6 +129,7 @@ if (node->declaration_list) {
 
 void TypeCheck::visitMethodNode(MethodNode* node) {
   // WRITEME: Replace with code if necessary
+  std::cout << "Visited method Node\n";
   node->visit_children(this);
   currentLocalOffset = 0;
 
@@ -153,6 +156,7 @@ void TypeCheck::visitMethodNode(MethodNode* node) {
   VariableInfo v;
   CompoundType a;
 
+  //Here we insert method declarations
   if (node->methodbody->declaration_list) {
     for(std::list<DeclarationNode*>::iterator iter = node->methodbody->declaration_list->begin();
         iter != node->methodbody->declaration_list->end(); iter++) {
@@ -177,6 +181,7 @@ void TypeCheck::visitMethodNode(MethodNode* node) {
   m.localsSize = -(currentLocalOffset);
   currentMethodTable->insert(std::pair<std::string, MethodInfo> (node->identifier->name, m));
 
+  //Here we insert the method parameters
   if (node->parameter_list) {
     currentParameterOffset = 8;
     for(std::list<ParameterNode*>::iterator iter = node->parameter_list->begin();
@@ -231,14 +236,21 @@ void TypeCheck::visitParameterNode(ParameterNode* node) {
 
 void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
   // WRITEME: Replace with code if necessary
+<<<<<<< HEAD
+=======
+  std::cout << "Visited DECLARATION NODE\n";
+>>>>>>> 1b79bb5e74fa8f8d8fdc2225a44f8d72e1feb66e
   node->visit_children(this);
   if(currentVariableTable == NULL){
     // CLASS MEMBER
     currentVariableTable = new VariableTable();
+    //How can we reference the table here?
 
   }
+  
   else{
     // METHOD VARIABLE
+<<<<<<< HEAD
   node->basetype = node->type->basetype;
   IdentifierNode* pIN = node->identifier_list->front();
   std::string name = pIN->name;
@@ -258,6 +270,28 @@ void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
   //currentVariableTable->insert( std::pair<std::string, VariableInfo> (name, v));
   }
   
+=======
+    node->basetype = node->type->basetype;
+    IdentifierNode* pIN = node->identifier_list->front();
+    std::string name = pIN->name;
+    delete pIN;
+    if(node->basetype == bt_object) {
+      node->objectClassName = node->type->objectClassName;
+    } 
+    CompoundType c;
+    VariableInfo v;
+    c.baseType = node->basetype;
+    c.objectClassName = node->objectClassName;
+    v.type = c;
+    v.offset = 0;
+    v.size = 4;
+
+    //Here we insert into ??? which table?
+    //currentVariableTable->insert( std::pair<std::string, VariableInfo> (name, v));
+  }
+  
+  
+>>>>>>> 1b79bb5e74fa8f8d8fdc2225a44f8d72e1feb66e
 
 }
 
