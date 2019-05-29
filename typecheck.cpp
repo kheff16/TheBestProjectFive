@@ -236,10 +236,6 @@ void TypeCheck::visitParameterNode(ParameterNode* node) {
 
 void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
   // WRITEME: Replace with code if necessary
-<<<<<<< HEAD
-=======
-  std::cout << "Visited DECLARATION NODE\n";
->>>>>>> 1b79bb5e74fa8f8d8fdc2225a44f8d72e1feb66e
   node->visit_children(this);
   if(currentVariableTable == NULL){
     // CLASS MEMBER
@@ -250,27 +246,6 @@ void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
   
   else{
     // METHOD VARIABLE
-<<<<<<< HEAD
-  node->basetype = node->type->basetype;
-  IdentifierNode* pIN = node->identifier_list->front();
-  std::string name = pIN->name;
-  delete pIN;
-  if(node->basetype == bt_object) {
-    node->objectClassName = node->type->objectClassName;
-  } 
-  CompoundType c;
-  VariableInfo v;
-  c.baseType = node->basetype;
-  c.objectClassName = node->objectClassName;
-  v.type = c;
-  v.offset = 0;
-  v.size = 4;
-
-
-  //currentVariableTable->insert( std::pair<std::string, VariableInfo> (name, v));
-  }
-  
-=======
     node->basetype = node->type->basetype;
     IdentifierNode* pIN = node->identifier_list->front();
     std::string name = pIN->name;
@@ -291,7 +266,6 @@ void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
   }
   
   
->>>>>>> 1b79bb5e74fa8f8d8fdc2225a44f8d72e1feb66e
 
 }
 
