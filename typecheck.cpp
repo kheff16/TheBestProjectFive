@@ -70,6 +70,7 @@ void TypeCheck::visitProgramNode(ProgramNode* node) {
   // WRITEME: Replace with code if necessary
   classTable = new ClassTable();
   node->visit_children(this);
+  print(*classTable, 0);
 }
 
 void TypeCheck::visitClassNode(ClassNode* node) {
@@ -93,17 +94,54 @@ void TypeCheck::visitClassNode(ClassNode* node) {
 void TypeCheck::visitMethodNode(MethodNode* node) {
   // WRITEME: Replace with code if necessary
   node->basetype = node->type->basetype;
-  node->objectClassName = node->identifier->name;
+
+  if(node->basetype == bt_object){
+        node->objectClassName = node->type->objectClassName;
+      }
+      else{
+        node->objectClassName = "";
+      }
+  
   //TODO: Is setting objectClassName right when we don't know the exact basetype?
-  MethodInfo m;
   CompoundType c;
   c.baseType = node->basetype;
   c.objectClassName = node->objectClassName;
+
+  MethodInfo m;
   m.returnType = c;
   m.variables = new VariableTable();
   m.parameters = new std::list<CompoundType> ();
+
+  VariableInfo v;
+  CompoundType a;
+
   currentVariableTable = m.variables;
   currentMethodTable->insert(std::pair<std::string, MethodInfo> (node->objectClassName, m));
+
+  if (node->parameter_list) {
+    for(std::list<ParameterNode*>::iterator iter = node->parameter_list->begin();
+        iter != node->parameter_list->end(); iter++) {
+          
+      a.baseType = (*iter)->type->basetype;
+      if(a.baseType == bt_object){
+        a.objectClassName = (*iter)->type->objectClassName;
+      }
+      else{
+        a.objectClassName = "";
+      }
+
+      (m.parameters)->push_back(a);
+      v.type = a;
+      v.size = 4;
+      // v.offset = currentParameterOffset + v.size;
+      // currentParameterOffset += v.size;
+
+      currentVariableTable->insert(std::pair<std::string, VariableInfo> ((*iter)->identifier->name, v));
+    }
+  }
+  // HERE WE ARE
+
+  
 }
 
 void TypeCheck::visitMethodBodyNode(MethodBodyNode* node) {
@@ -280,7 +318,7 @@ void TypeCheck::visitNoneNode(NoneNode* node) {
 }
 
 void TypeCheck::visitIdentifierNode(IdentifierNode* node) {
-  // WRITEME: Replace with code if necessary
+  // c0 c1; THIS METHOD IS ABOUT c1
 
 }
 
