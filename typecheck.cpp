@@ -82,7 +82,6 @@ void TypeCheck::visitClassNode(ClassNode* node) {
   c.methods = new MethodTable();
   currentMethodTable = c.methods;
 
-  std::cout << "Calling visit in CLASSNODE\n";
   node->visit_children(this); // Visits Declaration Node then Method Node
   currentClassName = node->identifier_1->name;
   
@@ -129,7 +128,6 @@ void TypeCheck::visitClassNode(ClassNode* node) {
 
 void TypeCheck::visitMethodNode(MethodNode* node) {
   // WRITEME: Replace with code if necessary
-  std::cout << "Visited method Node\n";
   node->visit_children(this);
   currentLocalOffset = 0;
 
@@ -327,46 +325,83 @@ void TypeCheck::visitGreaterEqualNode(GreaterEqualNode* node) {
 
 void TypeCheck::visitEqualNode(EqualNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  BaseType LHS = node->expression_1->basetype;
+  BaseType RHS = node->expression_2->basetype;
+  
 }
 
 void TypeCheck::visitAndNode(AndNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  if(node->expression_1->basetype != bt_boolean || node->expression_2->basetype != bt_boolean) {
+    typeError(expression_type_mismatch);
+  }
+  node->basetype = bt_boolean;
 }
 
 void TypeCheck::visitOrNode(OrNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  if(node->expression_1->basetype != bt_boolean || node->expression_2->basetype != bt_boolean) {
+    typeError(expression_type_mismatch);
+  }
+  node->basetype = bt_boolean;
+
 }
 
 void TypeCheck::visitNotNode(NotNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  if(node->expression->basetype != bt_boolean) {
+    typeError(expression_type_mismatch);
+  }
+  node->basetype = node->expression->basetype;
+
 }
 
 void TypeCheck::visitNegationNode(NegationNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  if(node->expression->basetype != bt_integer) {
+    typeError(expression_type_mismatch);
+  }
+  node->basetype = node->expression->basetype;
+
 }
 
 void TypeCheck::visitMethodCallNode(MethodCallNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  //Type defined in MethodInfo
 }
 
 void TypeCheck::visitMemberAccessNode(MemberAccessNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  //Type defined in variableInfo
 }
 
 void TypeCheck::visitVariableNode(VariableNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  //Type defined in variable info
 }
 
 void TypeCheck::visitIntegerLiteralNode(IntegerLiteralNode* node) {
   // WRITEME: Replace with code if necessary
+  node->basetype = bt_integer;
 }
 
 void TypeCheck::visitBooleanLiteralNode(BooleanLiteralNode* node) {
   // WRITEME: Replace with code if necessary
+  node->basetype = bt_boolean;
 }
 
 void TypeCheck::visitNewNode(NewNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  node->basetype = node->identifier->basetype;
 }
 
 void TypeCheck::visitIntegerTypeNode(IntegerTypeNode* node) {
