@@ -301,26 +301,59 @@ void TypeCheck::visitPrintNode(PrintNode* node) {
 
 void TypeCheck::visitPlusNode(PlusNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  if(node->expression_1->basetype != bt_integer && node->expression_2->basetype != bt_integer) {
+    typeError(expression_type_mismatch);
+  }
+  node->basetype = bt_integer;
 }
 
 void TypeCheck::visitMinusNode(MinusNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  if(node->expression_1->basetype != bt_integer && node->expression_2->basetype != bt_integer) {
+    typeError(expression_type_mismatch);
+  }
+  node->basetype = bt_integer;
 }
 
 void TypeCheck::visitTimesNode(TimesNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  if(node->expression_1->basetype != bt_integer && node->expression_2->basetype != bt_integer) {
+    typeError(expression_type_mismatch);
+  }
+  node->basetype = bt_integer;
 }
 
 void TypeCheck::visitDivideNode(DivideNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  if(node->expression_1->basetype != bt_integer && node->expression_2->basetype != bt_integer) {
+    typeError(expression_type_mismatch);
+  }
+  node->basetype = bt_integer;
+
 }
 
 void TypeCheck::visitGreaterNode(GreaterNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  if(node->expression_1->basetype != bt_integer && node->expression_2->basetype != bt_integer) {
+    typeError(expression_type_mismatch);
+  }
+  node->basetype = bt_boolean;
+
 }
 
 void TypeCheck::visitGreaterEqualNode(GreaterEqualNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  if(node->expression_1->basetype != bt_integer && node->expression_2->basetype != bt_integer) {
+    typeError(expression_type_mismatch);
+  }
+  node->basetype = bt_boolean;
+
 }
 
 void TypeCheck::visitEqualNode(EqualNode* node) {
@@ -328,13 +361,17 @@ void TypeCheck::visitEqualNode(EqualNode* node) {
   node->visit_children(this);
   BaseType LHS = node->expression_1->basetype;
   BaseType RHS = node->expression_2->basetype;
+  if((LHS != bt_integer && RHS != bt_integer) || (LHS != bt_boolean && RHS != bt_boolean)) {
+    typeError(expression_type_mismatch);
+  }
+  node->basetype = bt_boolean;
   
 }
 
 void TypeCheck::visitAndNode(AndNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
-  if(node->expression_1->basetype != bt_boolean || node->expression_2->basetype != bt_boolean) {
+  if(node->expression_1->basetype != bt_boolean && node->expression_2->basetype != bt_boolean) {
     typeError(expression_type_mismatch);
   }
   node->basetype = bt_boolean;
@@ -343,7 +380,7 @@ void TypeCheck::visitAndNode(AndNode* node) {
 void TypeCheck::visitOrNode(OrNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
-  if(node->expression_1->basetype != bt_boolean || node->expression_2->basetype != bt_boolean) {
+  if(node->expression_1->basetype != bt_boolean && node->expression_2->basetype != bt_boolean) {
     typeError(expression_type_mismatch);
   }
   node->basetype = bt_boolean;
