@@ -464,6 +464,7 @@ void TypeCheck::visitNoneNode(NoneNode* node) {
 
 void TypeCheck::visitIdentifierNode(IdentifierNode* node) {
   // c0 c1; THIS METHOD IS ABOUT c1
+  node->basetype = bt_object;
 
 }
 
