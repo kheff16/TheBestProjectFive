@@ -118,19 +118,6 @@ void TypeCheck::visitClassNode(ClassNode* node) {
     c.superClassName = node->identifier_2->name;
   }
 
-  // MORE WORK TO DO HERE TO ADD CLASS METHODS
-  // if(node->declaration_list){
-  //   for(std::list<DeclarationNode*>::iterator iter = node->declaration_list->begin(); iter != node->declaration_list->end(); ++iter){
-  //   }
-  // }
-  // if (this->identifier_list) {
-  //   for(std::list<IdentifierNode*>::iterator iter = this->identifier_list->begin();
-  //       iter != this->identifier_list->end(); iter++) {
-  //     (*iter)->accept(v);
-  //   }
-  // }
-
-
   /*
     Set all the tables
     iterate though decl list and call visitDeclNode
@@ -173,59 +160,19 @@ void TypeCheck::visitMethodNode(MethodNode* node) {
   
   currentMethodTable->insert(std::pair<std::string, MethodInfo> (node->identifier->name, m));
 
-  //Here we insert the method parameters
-  // LETS DO THIS IN PARAMETER NODE ... CHECK!
-  
-
-  
-
+  // Here we insert the method parameters
+  // LETS DO THIS IN PARAMETER NODE ... DONE!
   
 }
 
 void TypeCheck::visitMethodBodyNode(MethodBodyNode* node) {
   // WRITEME: Replace with code if necessary
-
-  VariableInfo *v1 = new VariableInfo();
-  CompoundType a;
-
   node->visit_children(this);
-
-  // if (node->declaration_list) {
-  //   currentLocalOffset = 0;
-  //   for(std::list<DeclarationNode*>::iterator iter = node->declaration_list->begin();
-  //       iter != node->declaration_list->end(); iter++) {
-      
-  //     a.baseType = (*iter)->type->basetype;
-  //     if(a.baseType == bt_object){
-  //       a.objectClassName = (*iter)->type->objectClassName;
-  //     }
-  //     else{
-  //       a.objectClassName = "";
-  //     }
-
-  //     v1->type = a;
-  //     v1->size = 4;
-  //     v1->offset = currentLocalOffset - v1->size;
-
-  //     for(std::list<IdentifierNode*>::iterator itera = (*iter)->identifier_list->begin();
-  //     itera != (*iter)->identifier_list->end(); itera++){
-
-        
-  //       currentLocalOffset -= v1->size;
-
-  //       currentVariableTable->insert(std::pair<std::string, VariableInfo> ((*itera)->name, *v1));
-  //     }
-
-  //   }
-  // }
-
 }
 
 void TypeCheck::visitParameterNode(ParameterNode* node) {
   // WRITEME: Replace with code if necessary
   
-  
-
   VariableInfo *v = new VariableInfo();
   CompoundType a;
 
@@ -236,23 +183,14 @@ void TypeCheck::visitParameterNode(ParameterNode* node) {
   a.baseType = node-> basetype;
   a.objectClassName = node->objectClassName;
 
-  if (node) {
+  v->type = a;
+  v->size = 4;
+  v->offset = currentParameterOffset + v->size;
+  currentParameterOffset += v->size;
 
-    v->type = a;
-    v->size = 4;
-    v->offset = currentParameterOffset + v->size;
-    currentParameterOffset += v->size;
-
-    currentVariableTable->insert(std::pair<std::string, VariableInfo> (node->identifier->name, *v));
-    delete v;
-}
-
-  // CompoundType c;
-  // c.baseType = node->basetype;
-  // c.objectClassName = node->objectClassName;
+  currentVariableTable->insert(std::pair<std::string, VariableInfo> (node->identifier->name, *v));
   
-  
-
+  // delete v;
 
 }
 
@@ -273,41 +211,34 @@ void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
     for(std::list<IdentifierNode*>::iterator iter = node->identifier_list->begin();
     iter != node->identifier_list->end(); iter++){
 
-      a.baseType = node->basetype;
-      a.objectClassName = node->objectClassName;
+      a.baseType = node->type->basetype;
+      a.objectClassName = node->type->objectClassName;
       v->size = 4;
-      v->offset = currentMemberOffset + v->size;
+      currentMemberOffset += v->size;
+      v->offset = currentMemberOffset;
       v->type = a;
 
-      currentMemberOffset += v->size;
 
       currentVariableTable->insert(std::pair<std::string, VariableInfo> ((*iter)->name, *v));
-      delete v;
+      // delete v;
     } 
   }
   else{
-    // HERE WE SHOULD INSERT METHOD VARIABLES
+    // HERE WE SHOULD INSERT METHOD VARIABLES OK SO NOW FIND THE TYPE
     for(std::list<IdentifierNode*>::iterator iter = node->identifier_list->begin();
     iter != node->identifier_list->end(); iter++){
 
-      a.baseType = node->basetype;
-      a.objectClassName = node->objectClassName;
+      a.baseType = node->type->basetype;
+      a.objectClassName = node->type->objectClassName;
       v->size = 4;
       currentLocalOffset -= v->size;
       v->offset = currentLocalOffset;
       v->type = a;
 
       currentVariableTable->insert(std::pair<std::string, VariableInfo> ((*iter)->name, *v));
-      delete v;
+      // delete v;
     } 
   }
-
-
-  // else {
-  //   v->offset = currentLocalOffset - v->size;
-  //   currentLocalOffset -= v->size;
-  // }
-  
 }
 
 void TypeCheck::visitReturnStatementNode(ReturnStatementNode* node) {
