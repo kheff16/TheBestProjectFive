@@ -296,6 +296,8 @@ void TypeCheck::visitReturnStatementNode(ReturnStatementNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
   node->basetype = node->expression->basetype;
+  //TODO: Must we check that basetype is bt_object
+  node->objectClassName = node->expression->objectClassName;
 
 
 }
@@ -354,6 +356,9 @@ void TypeCheck::visitAssignmentNode(AssignmentNode* node) {
 
 void TypeCheck::visitCallNode(CallNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  node->basetype = node->methodcall->basetype;
+  node->objectClassName = node->methodcall->basetype;
 
 }
 
@@ -384,6 +389,7 @@ void TypeCheck::visitDoWhileNode(DoWhileNode* node) {
 
 void TypeCheck::visitPrintNode(PrintNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
 }
 
 void TypeCheck::visitPlusNode(PlusNode* node) {
@@ -491,6 +497,7 @@ void TypeCheck::visitNegationNode(NegationNode* node) {
     typeError(expression_type_mismatch);
   }
   node->basetype = node->expression->basetype;
+  // TODO: or node->basetype = bt_integer
 
 }
 
@@ -508,8 +515,7 @@ void TypeCheck::visitMemberAccessNode(MemberAccessNode* node) {
 
 void TypeCheck::visitVariableNode(VariableNode* node) {
   // WRITEME: Replace with code if necessary
-  node->visit_children(this);
-  //Type defined in variable info
+  
 }
 
 void TypeCheck::visitIntegerLiteralNode(IntegerLiteralNode* node) {
@@ -525,7 +531,13 @@ void TypeCheck::visitBooleanLiteralNode(BooleanLiteralNode* node) {
 void TypeCheck::visitNewNode(NewNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
-  node->basetype = node->identifier->basetype;
+  if(classTable->find(node->identifier->name) == classTable->end()) {
+    typeError(undefined_class);
+  }
+  //TODO: Check args of expressionlist
+
+  node->objectClassName = node->identifier->name;
+  node->basetype = bt_object;
 }
 
 void TypeCheck::visitIntegerTypeNode(IntegerTypeNode* node) {
