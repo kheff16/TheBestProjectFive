@@ -127,20 +127,8 @@ void TypeCheck::visitClassNode(ClassNode* node) {
 }
 
 void TypeCheck::visitMethodNode(MethodNode* node) {
-  // WRITEME: Replace with code if necessary 
-  CompoundType c;
-  
-
-  MethodInfo m;
-  m.variables = new VariableTable();
-  m.parameters = new std::list<CompoundType> ();
-  currentVariableTable = m.variables;
-
+  // WRITEME: Replace with code if necessary
   node->visit_children(this);
-  
-  c.baseType = node->basetype;
-  c.objectClassName = node->objectClassName;
-  m.returnType = c;
   currentLocalOffset = 0;
 
   node->basetype = node->type->basetype;
@@ -153,7 +141,15 @@ void TypeCheck::visitMethodNode(MethodNode* node) {
       }
   
   //TODO: Is setting objectClassName right when we don't know the exact basetype?
- 
+  CompoundType c;
+  c.baseType = node->basetype;
+  c.objectClassName = node->objectClassName;
+
+  MethodInfo m;
+  m.returnType = c;
+  m.variables = new VariableTable();
+  m.parameters = new std::list<CompoundType> ();
+  currentVariableTable = m.variables;
 
   VariableInfo v;
   CompoundType a;
