@@ -99,14 +99,14 @@ void TypeCheck::visitClassNode(ClassNode* node) {
     }
   }
   currentClassName = node->identifier_1->name;
-
-  currentVariableTable = NULL;
-  currentMemberOffset = -4;
-  VariableInfo v;
-  CompoundType a;
   ClassInfo c;
-  c.methods = new MethodTable;
+  c.members = new VariableTable();
+  c.methods = new MethodTable();
   currentMethodTable = c.methods;
+  currentVariableTable = c.members;
+
+  currentMemberOffset = -4;
+  currentLocalOffset = -1;
 
   node->visit_children(this); // Visits Declaration Node then Method Node
   
@@ -117,8 +117,6 @@ void TypeCheck::visitClassNode(ClassNode* node) {
     c.superClassName = node->identifier_2->name;
   }
   
-  c.members = new VariableTable; 
-  currentVariableTable = c.members;
 
   // MORE WORK TO DO HERE TO ADD CLASS MEETHODS
 
@@ -129,31 +127,10 @@ void TypeCheck::visitClassNode(ClassNode* node) {
      ''' '' '' ' ' ' ' 'memberlist
   */
 
-  //Here we add the class members
-  if (node->declaration_list) {
-      for(std::list<DeclarationNode*>::iterator iter = node->declaration_list->begin();
-          iter != node->declaration_list->end(); iter++) {
-        a.baseType = (*iter)->type->basetype;
-        if(a.baseType == bt_object){
-          a.objectClassName = (*iter)->type->objectClassName;
-        }
-        else{
-          a.objectClassName = "";
-        }
-        v.type = a;
-        v.size = 4;
-
-        for(std::list<IdentifierNode*>::iterator itera = (*iter)->identifier_list->begin();
-          itera != (*iter)->identifier_list->end(); itera++){
-            v.offset = currentMemberOffset + v.size;
-            currentMemberOffset += v.size;
-            currentVariableTable->insert(std::pair<std::string, VariableInfo> ((*itera)->name, v));
-        }
-      }
-  }
+  
 
 
-  // ??? c.membersSize = c.members.size();
+  c.membersSize = -(currentMemberOffset) * (c.members.size());
   classTable->insert(std::pair<std::string, ClassInfo> (currentClassName, c));
 
 }
@@ -183,35 +160,12 @@ void TypeCheck::visitMethodNode(MethodNode* node) {
   m.parameters = new std::list<CompoundType> ();
   currentVariableTable = m.variables;
 
-  VariableInfo v;
-  CompoundType a;
-
-  //Here we insert method declarations
-  if (node->methodbody->declaration_list) {
-    for(std::list<DeclarationNode*>::iterator iter = node->methodbody->declaration_list->begin();
-        iter != node->methodbody->declaration_list->end(); iter++) {
-      a.baseType = (*iter)->type->basetype;
-      if(a.baseType == bt_object){
-        a.objectClassName = (*iter)->type->objectClassName;
-      }
-      else{
-        a.objectClassName = "";
-      }
-      v.type = a;
-      v.size = 4;
-  
-        for(std::list<IdentifierNode*>::iterator itera = (*iter)->identifier_list->begin();
-          itera != (*iter)->identifier_list->end(); itera++){
-            v.offset = currentLocalOffset - v.size;
-            currentLocalOffset -= v.size;
-            currentVariableTable->insert(std::pair<std::string, VariableInfo> ((*itera)->name, v));
-          }
-    }
-  }
   m.localsSize = -(currentLocalOffset);
   currentMethodTable->insert(std::pair<std::string, MethodInfo> (node->identifier->name, m));
 
   //Here we insert the method parameters
+  VariableInfo v;
+  CompoundType a;
   if (node->parameter_list) {
     currentParameterOffset = 8;
     for(std::list<ParameterNode*>::iterator iter = node->parameter_list->begin();
@@ -267,29 +221,76 @@ void TypeCheck::visitParameterNode(ParameterNode* node) {
 void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
-  if(currentVariableTable == NULL){
-    // // CLASS MEMBER
-    currentVariableTable = new VariableTable();
-  }
+
+  /*
+  if currentLocalOffset
+
+  else
+
+  */
   
-  else {
-    // METHOD VARIABLE
-    node->basetype = node->type->basetype;
-    // node->identifier_list
-    IdentifierNode* pIN = node->identifier_list->front();
-    std::string name = pIN->name;
-    delete pIN;
-    if(node->basetype == bt_object) {
-      node->objectClassName = node->type->objectClassName;
-    } 
-    CompoundType c;
-    VariableInfo v;
-    c.baseType = node->basetype;
-    c.objectClassName = node->objectClassName;
-    v.type = c;
-    v.offset = 0;
-    v.size = 4;
+    // // METHOD VARIABLE
+    // node->basetype = node->type->basetype;
+    // // node->identifier_list
+    // IdentifierNode* pIN = node->identifier_list->front();
+    // std::string name = pIN->name;
+    // delete pIN;
+    // if(node->basetype == bt_object) {
+    //   node->objectClassName = node->type->objectClassName;
+    // } 
+    // CompoundType c;
+    // VariableInfo v;
+    // c.baseType = node->basetype;
+    // c.objectClassName = node->objectClassName;
+    // v.type = c;
+    // v.offset = 0;
+    // v.size = 4;
+
+
+  //Here we add the class members
+  for(std::list<IdentifierNode*>::iterator iter = node->identifier_list->begin();
+    iter != node->identifier_list->end(); iter++){
+      VariableInfo* v = new VariableInfo();
+      
+      v->type.baseType = node->type->basetype;
+      if(v->type.baseType == bt_object) {
+        v->type.objectClassName = node->type->objectClassName;
+      }
+      else {
+        v->type.objectClassName = "";
+      }
+
+      v->size = 4;
+
+      //if-else to check offset (localOffset) if flag value then members
+      //Local is for methods
+      //members are for class
+      if(currentLocalOffset == -1) {
+        //We are inserting the offset of members of class
+        v->offset = currentMemberOffset + v->size;
+        currentMemberOffset += v->size;
+
+      }
+      else {
+        v->offset = currentLocalOffset - v->size;
+        currentLocalOffset -= v->size;
+      }
+
+      
+      currentVariableTable->insert(std::pair<std::string, VariableInfo> ((*iter)->name, *v));
   }
+      
+
+
+
+
+
+
+
+
+
+
+
 }
 
 void TypeCheck::visitReturnStatementNode(ReturnStatementNode* node) {
@@ -320,10 +321,13 @@ void TypeCheck::visitAssignmentNode(AssignmentNode* node) {
       b = vi.type.baseType;
 
       if(node->expression->basetype != b){
+        std::cout << "RHS TYPE: " << node->expression->basetype << std::endl;
+        std::cout << "LHS TYPE: " << b << std::endl;
         typeError(assignment_type_mismatch);
       }
     }
     else{
+      std::cout << node->identifier_1->name << " Not defined\n";
       typeError(undefined_variable);
     }
     
