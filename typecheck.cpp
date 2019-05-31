@@ -127,8 +127,20 @@ void TypeCheck::visitClassNode(ClassNode* node) {
 }
 
 void TypeCheck::visitMethodNode(MethodNode* node) {
-  // WRITEME: Replace with code if necessary
+  // WRITEME: Replace with code if necessary 
+  CompoundType c;
+  
+
+  MethodInfo m;
+  m.variables = new VariableTable();
+  m.parameters = new std::list<CompoundType> ();
+  currentVariableTable = m.variables;
+
   node->visit_children(this);
+  
+  c.baseType = node->basetype;
+  c.objectClassName = node->objectClassName;
+  m.returnType = c;
   currentLocalOffset = 0;
 
   node->basetype = node->type->basetype;
@@ -141,15 +153,7 @@ void TypeCheck::visitMethodNode(MethodNode* node) {
       }
   
   //TODO: Is setting objectClassName right when we don't know the exact basetype?
-  CompoundType c;
-  c.baseType = node->basetype;
-  c.objectClassName = node->objectClassName;
-
-  MethodInfo m;
-  m.returnType = c;
-  m.variables = new VariableTable();
-  m.parameters = new std::list<CompoundType> ();
-  currentVariableTable = m.variables;
+ 
 
   VariableInfo v;
   CompoundType a;
@@ -235,16 +239,18 @@ void TypeCheck::visitParameterNode(ParameterNode* node) {
 void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
+  int x;
   if(currentVariableTable == NULL){
-    // CLASS MEMBER
+    // // CLASS MEMBER
     currentVariableTable = new VariableTable();
     //How can we reference the table here?
-
+    x = 5;
   }
   
   else{
     // METHOD VARIABLE
     node->basetype = node->type->basetype;
+    // node->identifier_list
     IdentifierNode* pIN = node->identifier_list->front();
     std::string name = pIN->name;
     delete pIN;
@@ -277,6 +283,50 @@ void TypeCheck::visitReturnStatementNode(ReturnStatementNode* node) {
 
 void TypeCheck::visitAssignmentNode(AssignmentNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  VariableInfo vi;
+  ClassInfo c;
+  BaseType  b;
+  if(node->identifier_2 == NULL){
+    // Only need to check whether the id is of the same type
+    int i = currentVariableTable->count(node->identifier_1->name);
+    if(i){
+      vi = (*currentVariableTable)[node->identifier_1->name];
+      b = vi.type.baseType;
+
+      if(node->expression->basetype != b){
+        typeError(assignment_type_mismatch);
+      }
+    }
+    else{
+      typeError(undefined_variable);
+    }
+    
+  }
+  else{
+    // Need to check if T_id.T_id is of the same type as the expression
+    if(classTable->count(node->identifier_1->name)){
+      // HOPE THIS WORKS
+      c = (*classTable)[node->identifier_1->name];
+      if(c.members->count(node->identifier_2->name)){
+        vi = (*(c.members))[node->identifier_1->name];
+        b = vi.type.baseType;
+        if(node->expression->basetype != b){
+          typeError(assignment_type_mismatch);
+        }
+      }
+      else{
+        typeError(undefined_member);
+      }
+    }
+    else{
+      typeError(undefined_class);
+    }
+  }
+  
+  // IF ID 1 == CLASSNAME THEN LOOK AT THE MEMBER VARIABLES FOR IDENTIFIER 2
+
+  
 }
 
 void TypeCheck::visitCallNode(CallNode* node) {
@@ -285,14 +335,28 @@ void TypeCheck::visitCallNode(CallNode* node) {
 
 void TypeCheck::visitIfElseNode(IfElseNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  if(node->expression->basetype != bt_boolean){
+    typeError(if_predicate_type_mismatch);
+  }
 }
 
 void TypeCheck::visitWhileNode(WhileNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  if(node->expression->basetype != bt_boolean){
+    typeError(while_predicate_type_mismatch);
+  }
 }
 
 void TypeCheck::visitDoWhileNode(DoWhileNode* node) {
   // WRITEME: Replace with code if necessary
+  node->visit_children(this);
+  if(node->expression->basetype != bt_boolean){
+    typeError(do_while_predicate_type_mismatch
+    );
+  }
+  
 }
 
 void TypeCheck::visitPrintNode(PrintNode* node) {
