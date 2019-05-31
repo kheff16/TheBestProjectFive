@@ -70,20 +70,45 @@ void TypeCheck::visitProgramNode(ProgramNode* node) {
   // WRITEME: Replace with code if necessary
   classTable = new ClassTable();
   node->visit_children(this);
+
+  if(classTable->find("Main") == classTable->end()) {
+    typeError(no_main_class);
+  }
+  //This means a Main class must exist, thus
+  auto mainClass = classTable->at("Main");
+
+  if(mainClass.members->size() != 0) {
+    typeError(main_class_members_present);
+  }
+  if (mainClass.methods->find("main") == mainClass.methods->end()) {
+        typeError(no_main_method);
+  }
+  auto mainMethod = mainClass.methods->at("main");
+  if (mainMethod.parameters->size() != 0 || mainMethod.returnType.baseType != bt_none) {
+      typeError(main_method_incorrect_signature);
+  }
+  
 }
 
 void TypeCheck::visitClassNode(ClassNode* node) {
   // WRITEME: Replace with code if necessary
+  // Checking if super class is valid, then it must be in table
+  if(node->identifier_2) {
+    if(classTable->find(node->identifier_2->name) == classTable->end()) {
+      typeError(undefined_class);
+    }
+  }
+  currentClassName = node->identifier_1->name;
+
   currentVariableTable = NULL;
   currentMemberOffset = -4;
   VariableInfo v;
   CompoundType a;
   ClassInfo c;
-  c.methods = new MethodTable();
+  c.methods = new MethodTable;
   currentMethodTable = c.methods;
 
   node->visit_children(this); // Visits Declaration Node then Method Node
-  currentClassName = node->identifier_1->name;
   
   if(node->identifier_2 == NULL) {
     c.superClassName = "";
@@ -92,10 +117,17 @@ void TypeCheck::visitClassNode(ClassNode* node) {
     c.superClassName = node->identifier_2->name;
   }
   
-  c.members = new VariableTable(); 
+  c.members = new VariableTable; 
   currentVariableTable = c.members;
 
   // MORE WORK TO DO HERE TO ADD CLASS MEETHODS
+
+  /*
+    Set all the tables
+    iterate though decl list and call visitDeclNode
+    set offset
+     ''' '' '' ' ' ' ' 'memberlist
+  */
 
   //Here we add the class members
   if (node->declaration_list) {
@@ -235,15 +267,12 @@ void TypeCheck::visitParameterNode(ParameterNode* node) {
 void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
-  int x;
   if(currentVariableTable == NULL){
     // // CLASS MEMBER
     currentVariableTable = new VariableTable();
-    //How can we reference the table here?
-    x = 5;
   }
   
-  else{
+  else {
     // METHOD VARIABLE
     node->basetype = node->type->basetype;
     // node->identifier_list
@@ -260,13 +289,7 @@ void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
     v.type = c;
     v.offset = 0;
     v.size = 4;
-
-    //Here we insert into ??? which table?
-    //currentVariableTable->insert( std::pair<std::string, VariableInfo> (name, v));
   }
-  
-  
-
 }
 
 void TypeCheck::visitReturnStatementNode(ReturnStatementNode* node) {
@@ -279,13 +302,17 @@ void TypeCheck::visitReturnStatementNode(ReturnStatementNode* node) {
 
 void TypeCheck::visitAssignmentNode(AssignmentNode* node) {
   // WRITEME: Replace with code if necessary
+  //TODO: Fix currentVariableTable not pointing to the right one
   node->visit_children(this);
   VariableInfo vi;
   ClassInfo c;
   BaseType  b;
   if(node->identifier_2 == NULL){
     // Only need to check whether the id is of the same type
-    int i = currentVariableTable->count(node->identifier_1->name);
+    if(currentVariableTable->empty()) {
+      std::cout << "--- CVT IS EMPTY ---" << std::endl;
+    }
+    int i = currentVariableTable->count(node->identifier_1->name); //What if the table is empty?
     if(i){
       vi = (*currentVariableTable)[node->identifier_1->name];
       b = vi.type.baseType;
@@ -327,6 +354,7 @@ void TypeCheck::visitAssignmentNode(AssignmentNode* node) {
 
 void TypeCheck::visitCallNode(CallNode* node) {
   // WRITEME: Replace with code if necessary
+
 }
 
 void TypeCheck::visitIfElseNode(IfElseNode* node) {
@@ -349,8 +377,7 @@ void TypeCheck::visitDoWhileNode(DoWhileNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
   if(node->expression->basetype != bt_boolean){
-    typeError(do_while_predicate_type_mismatch
-    );
+    typeError(do_while_predicate_type_mismatch);
   }
   
 }
