@@ -133,10 +133,15 @@ void TypeCheck::visitMethodNode(MethodNode* node) {
   // WRITEME: Replace with code if necessary
   MethodInfo m;
   CompoundType c;
+  VariableInfo *v = new VariableInfo();
+  CompoundType a;
+
   m.variables = new VariableTable();
   currentVariableTable = m.variables;
   currentLocalOffset = 0;
   currentParameterOffset = 8;
+  m.parameters = new std::list<CompoundType> ();
+
   node->visit_children(this);
   
 
@@ -154,13 +159,32 @@ void TypeCheck::visitMethodNode(MethodNode* node) {
   c.objectClassName = node->objectClassName;
   
   m.returnType = c;
-  m.parameters = new std::list<CompoundType> ();
 
   m.localsSize = -(currentLocalOffset);
-  
-  currentMethodTable->insert(std::pair<std::string, MethodInfo> (node->identifier->name, m));
 
   // Here we insert the method parameters
+  
+  for(std::list<ParameterNode*>::iterator iter = node->parameter_list->begin(); 
+  iter != node->parameter_list->end(); ++iter){
+    
+    (*iter)->visit_children(this);
+
+    (*iter)->basetype = (*iter)->type->basetype;
+    (*iter)->objectClassName = (*iter)->type->objectClassName;
+
+    a.baseType = (*iter)-> basetype;
+    a.objectClassName = (*iter)->objectClassName;
+
+    v->type = a;
+    v->size = 4;
+    v->offset = currentParameterOffset + v->size;
+    currentParameterOffset += v->size;
+    m.parameters->push_back(a);
+
+    currentVariableTable->insert(std::pair<std::string, VariableInfo> ((*iter)->identifier->name, *v));
+  }
+
+  currentMethodTable->insert(std::pair<std::string, MethodInfo> (node->identifier->name, m));
   // LETS DO THIS IN PARAMETER NODE ... DONE!
   
 }
@@ -172,26 +196,6 @@ void TypeCheck::visitMethodBodyNode(MethodBodyNode* node) {
 
 void TypeCheck::visitParameterNode(ParameterNode* node) {
   // WRITEME: Replace with code if necessary
-  
-  VariableInfo *v = new VariableInfo();
-  CompoundType a;
-
-  node->visit_children(this);
-  node->basetype = node->type->basetype;
-  node->objectClassName = node->type->objectClassName;
-
-  a.baseType = node-> basetype;
-  a.objectClassName = node->objectClassName;
-
-  v->type = a;
-  v->size = 4;
-  v->offset = currentParameterOffset + v->size;
-  currentParameterOffset += v->size;
-
-  currentVariableTable->insert(std::pair<std::string, VariableInfo> (node->identifier->name, *v));
-  
-  // delete v;
-
 }
 
 void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
@@ -271,6 +275,7 @@ void TypeCheck::visitAssignmentNode(AssignmentNode* node) {
       if(node->expression->basetype != b){
         std::cout << "RHS TYPE: " << node->expression->basetype << std::endl;
         std::cout << "LHS TYPE: " << b << std::endl;
+        // THIS ONE FOR LANG 11
         typeError(assignment_type_mismatch);
       }
     }
@@ -406,7 +411,7 @@ void TypeCheck::visitEqualNode(EqualNode* node) {
   node->visit_children(this);
   BaseType LHS = node->expression_1->basetype;
   BaseType RHS = node->expression_2->basetype;
-  if((LHS != bt_integer && RHS != bt_integer) || (LHS != bt_boolean && RHS != bt_boolean)) {
+  if(!((LHS == bt_integer && RHS == bt_integer) || (LHS == bt_boolean && RHS == bt_boolean))) {
     typeError(expression_type_mismatch);
   }
   node->basetype = bt_boolean;
@@ -461,6 +466,19 @@ void TypeCheck::visitMethodCallNode(MethodCallNode* node) {
 
 void TypeCheck::visitMemberAccessNode(MemberAccessNode* node) {
   // WRITEME: Replace with code if necessary
+  std::string mClass = currentClassName;
+  CompoundType memAccess; // This will store the type of the MemberAccess
+
+  if(currentVariableTable->count(node->identifier_1->name)){
+    memAccess.baseType = (*currentVariableTable)[node->identifier_1->name].type.baseType;
+    memAccess.objectClassName = (*currentVariableTable)[node->identifier_1->name].type.objectClassName;
+  }
+  // CHECK IF IN CURRENT CLASS
+  else if((*classTable)[mClass].members->count(node->identifier_1->name)){
+    
+  }
+  this->classTable->at(mClass).methods;
+
   node->visit_children(this);
   //Type defined in variableInfo
 }
