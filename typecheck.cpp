@@ -338,8 +338,10 @@ void TypeCheck::visitCallNode(CallNode* node) {
 
 void TypeCheck::visitIfElseNode(IfElseNode* node) {
   // WRITEME: Replace with code if necessary
+  auto e = (*node->statement_list_1->begin());
   node->visit_children(this);
   if(node->expression->basetype != bt_boolean){
+    
     typeError(if_predicate_type_mismatch);
   }
 }
@@ -483,18 +485,45 @@ void TypeCheck::visitMethodCallNode(MethodCallNode* node) {
 
 void TypeCheck::visitMemberAccessNode(MemberAccessNode* node) {
   // WRITEME: Replace with code if necessary
-  std::string mClass = currentClassName;
-  CompoundType memAccess; // This will store the type of the MemberAccess
 
-  if(currentVariableTable->count(node->identifier_1->name)){
-    memAccess.baseType = (*currentVariableTable)[node->identifier_1->name].type.baseType;
-    memAccess.objectClassName = (*currentVariableTable)[node->identifier_1->name].type.objectClassName;
+  std::string mClass = currentClassName;
+  std::string id1 = node->identifier_1->name;
+  std::string id2 = node->identifier_2->name;
+  CompoundType memAccess; // This will store the type of the MemberAccess
+  std::map<std::string, VariableInfo>::iterator it;
+
+  // CHECK IF IN CURRENT METHOD
+  if(currentVariableTable->count(id1)){
+    memAccess.baseType = (*currentVariableTable)[id1].type.baseType;
+    memAccess.objectClassName = (*currentVariableTable)[id1].type.objectClassName;
+
+    node->basetype = (classTable->at(memAccess.objectClassName)).members->at(id2).type.baseType; // This is the type we need to check (the type of the memberAccessNode)
+    node->objectClassName = (classTable->at(memAccess.objectClassName)).members->at(id2).type.objectClassName;
   }
-  // CHECK IF IN CURRENT CLASS
-  else if((*classTable)[mClass].members->count(node->identifier_1->name)){
-    
+  else{
+    // CHECK IF IN CURRENT CLASS OR SUPERCLASSES
+    do{
+      // HERE AGAIN FIX THIS 
+      // OR ELSE
+      
+      
+      if((classTable->at(currentClassName)).members->find(id1) != (classTable->at(currentClassName)).members->end()){
+        // found member in class
+        memAccess = (classTable->at(currentClassName)).members->at(id1).type;
+        break;
+      }
+      else if(classTable->at(currentClassName).superClassName == ""){
+        // NEVER FOUND MEMBER AND NO MORE SUPER CLASSES
+        // THROW SOME TYPE ERROR
+        //typeError();
+      }
+    }while((mClass = classTable->at(mClass).superClassName) != "");
+    // FOUND member and set memAccess to the class it is using
+    auto a = (classTable->at(memAccess.objectClassName)).members;
+    // a holds members of the class we needed to find to see what we are accessing
+    node->basetype = a->at(id2).type.baseType; // This is the type we need to check (the type of the memberAccessNode)
+    node->objectClassName = a->at(id2).type.objectClassName;
   }
-  this->classTable->at(mClass).methods;
 
   node->visit_children(this);
   //Type defined in variableInfo
@@ -615,12 +644,12 @@ void TypeCheck::visitNoneNode(NoneNode* node) {
 
 void TypeCheck::visitIdentifierNode(IdentifierNode* node) {
   // c0 c1; THIS METHOD IS ABOUT c1
-  node->basetype = bt_object;
 
 }
 
 void TypeCheck::visitIntegerNode(IntegerNode* node) {
   // WRITEME: Replace with code if necessary
+
 }
 
 
