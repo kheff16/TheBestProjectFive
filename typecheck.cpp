@@ -108,6 +108,7 @@ void TypeCheck::visitClassNode(ClassNode* node) {
   currentMemberOffset = -4;
   currentLocalOffset = -1;
 
+  
   node->visit_children(this); // Visits Declaration Node then Method Node
   
   if(node->identifier_2 == NULL) {
@@ -127,10 +128,13 @@ void TypeCheck::visitClassNode(ClassNode* node) {
      ''' '' '' ' ' ' ' 'memberlist
   */
 
+//  c.members = new VariableTable();
+//  currentVariableTable = c.members;
   
 
 
-  c.membersSize = -(currentMemberOffset) * (c.members.size());
+
+  c.membersSize = -(currentMemberOffset) * (c.members->size());
   classTable->insert(std::pair<std::string, ClassInfo> (currentClassName, c));
 
 }
@@ -161,6 +165,31 @@ void TypeCheck::visitMethodNode(MethodNode* node) {
   currentVariableTable = m.variables;
 
   m.localsSize = -(currentLocalOffset);
+
+  //TypeError Checks before insertion
+  ReturnStatementNode* returnState = node->methodbody->returnstatement;
+  BaseType nodeType = node->type->basetype;
+
+  if(!returnState && nodeType != bt_none) {
+    typeError(return_type_mismatch);
+  }
+  if(nodeType == bt_none && returnState) {
+    typeError(return_type_mismatch);
+  }
+  if(returnState && nodeType != returnState->basetype && nodeType != bt_none) {
+    typeError(return_type_mismatch);
+  }
+  if(returnState && nodeType == bt_object && node->type->objectClassName != returnState->objectClassName) {
+    typeError(return_type_mismatch);
+  }
+  if(node->identifier->name == this->currentClassName && nodeType != bt_none) {
+    typeError(constructor_returns_type);
+  }
+  
+
+
+
+
   currentMethodTable->insert(std::pair<std::string, MethodInfo> (node->identifier->name, m));
 
   //Here we insert the method parameters
@@ -250,6 +279,12 @@ void TypeCheck::visitDeclarationNode(DeclarationNode* node) {
   //Here we add the class members
   for(std::list<IdentifierNode*>::iterator iter = node->identifier_list->begin();
     iter != node->identifier_list->end(); iter++){
+
+      // TypeError Checking for a class
+      if(node->basetype == bt_object && !(*classTable).count(node->type->objectClassName)) {
+        typeError(undefined_class);
+      }
+
       VariableInfo* v = new VariableInfo();
       
       v->type.baseType = node->type->basetype;
@@ -297,37 +332,34 @@ void TypeCheck::visitReturnStatementNode(ReturnStatementNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
   node->basetype = node->expression->basetype;
-  //TODO: Must we check that basetype is bt_object
+  if(node->basetype == bt_object) {
   node->objectClassName = node->expression->objectClassName;
+  }
+  else {
+    node->objectClassName = "";
+  }
 
 
 }
 
 void TypeCheck::visitAssignmentNode(AssignmentNode* node) {
   // WRITEME: Replace with code if necessary
-  //TODO: Fix currentVariableTable not pointing to the right one
   node->visit_children(this);
   VariableInfo vi;
   ClassInfo c;
   BaseType  b;
   if(node->identifier_2 == NULL){
     // Only need to check whether the id is of the same type
-    if(currentVariableTable->empty()) {
-      std::cout << "--- CVT IS EMPTY ---" << std::endl;
-    }
-    int i = currentVariableTable->count(node->identifier_1->name); //What if the table is empty?
+    int i = currentVariableTable->count(node->identifier_1->name);
     if(i){
       vi = (*currentVariableTable)[node->identifier_1->name];
       b = vi.type.baseType;
 
       if(node->expression->basetype != b){
-        std::cout << "RHS TYPE: " << node->expression->basetype << std::endl;
-        std::cout << "LHS TYPE: " << b << std::endl;
         typeError(assignment_type_mismatch);
       }
     }
     else{
-      std::cout << node->identifier_1->name << " Not defined\n";
       typeError(undefined_variable);
     }
     
@@ -394,12 +426,19 @@ void TypeCheck::visitDoWhileNode(DoWhileNode* node) {
 void TypeCheck::visitPrintNode(PrintNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
+  node->basetype = node->expression->basetype;
+  if(node->basetype == bt_object) {
+    node->objectClassName = node->expression->objectClassName;
+}
+  else {
+    node->objectClassName = "";
+  }
 }
 
 void TypeCheck::visitPlusNode(PlusNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
-  if(node->expression_1->basetype != bt_integer && node->expression_2->basetype != bt_integer) {
+  if(node->expression_1->basetype != bt_integer || node->expression_2->basetype != bt_integer) {
     typeError(expression_type_mismatch);
   }
   node->basetype = bt_integer;
@@ -408,7 +447,7 @@ void TypeCheck::visitPlusNode(PlusNode* node) {
 void TypeCheck::visitMinusNode(MinusNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
-  if(node->expression_1->basetype != bt_integer && node->expression_2->basetype != bt_integer) {
+  if(node->expression_1->basetype != bt_integer || node->expression_2->basetype != bt_integer) {
     typeError(expression_type_mismatch);
   }
   node->basetype = bt_integer;
@@ -417,7 +456,7 @@ void TypeCheck::visitMinusNode(MinusNode* node) {
 void TypeCheck::visitTimesNode(TimesNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
-  if(node->expression_1->basetype != bt_integer && node->expression_2->basetype != bt_integer) {
+  if(node->expression_1->basetype != bt_integer || node->expression_2->basetype != bt_integer) {
     typeError(expression_type_mismatch);
   }
   node->basetype = bt_integer;
@@ -426,7 +465,7 @@ void TypeCheck::visitTimesNode(TimesNode* node) {
 void TypeCheck::visitDivideNode(DivideNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
-  if(node->expression_1->basetype != bt_integer && node->expression_2->basetype != bt_integer) {
+  if(node->expression_1->basetype != bt_integer || node->expression_2->basetype != bt_integer) {
     typeError(expression_type_mismatch);
   }
   node->basetype = bt_integer;
@@ -436,7 +475,7 @@ void TypeCheck::visitDivideNode(DivideNode* node) {
 void TypeCheck::visitGreaterNode(GreaterNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
-  if(node->expression_1->basetype != bt_integer && node->expression_2->basetype != bt_integer) {
+  if(node->expression_1->basetype != bt_integer || node->expression_2->basetype != bt_integer) {
     typeError(expression_type_mismatch);
   }
   node->basetype = bt_boolean;
@@ -446,7 +485,7 @@ void TypeCheck::visitGreaterNode(GreaterNode* node) {
 void TypeCheck::visitGreaterEqualNode(GreaterEqualNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
-  if(node->expression_1->basetype != bt_integer && node->expression_2->basetype != bt_integer) {
+  if(node->expression_1->basetype != bt_integer || node->expression_2->basetype != bt_integer) {
     typeError(expression_type_mismatch);
   }
   node->basetype = bt_boolean;
@@ -458,7 +497,7 @@ void TypeCheck::visitEqualNode(EqualNode* node) {
   node->visit_children(this);
   BaseType LHS = node->expression_1->basetype;
   BaseType RHS = node->expression_2->basetype;
-  if((LHS != bt_integer && RHS != bt_integer) || (LHS != bt_boolean && RHS != bt_boolean)) {
+  if((LHS != bt_integer || RHS != bt_integer) || (LHS != bt_boolean || RHS != bt_boolean)) {
     typeError(expression_type_mismatch);
   }
   node->basetype = bt_boolean;
@@ -519,6 +558,13 @@ void TypeCheck::visitMemberAccessNode(MemberAccessNode* node) {
 
 void TypeCheck::visitVariableNode(VariableNode* node) {
   // WRITEME: Replace with code if necessary
+  std::string variableName = node->identifier->name;
+  //If variable is not defined as local var or param, then it must be a member of the class
+  // but how do I know which currentVariable table I'm looking at?
+  // if(this->currentVariableTable->find(variableName) == this->currentVariableTable->end()) {
+    
+  // }
+
   
 }
 
@@ -532,13 +578,70 @@ void TypeCheck::visitBooleanLiteralNode(BooleanLiteralNode* node) {
   node->basetype = bt_boolean;
 }
 
+//Helper function to check polymorphism
+bool classIsInherited(TypeCheck *tc, std::string inheritedClass, std::string superClass) {
+  do {
+    if(inheritedClass == superClass) {
+      return true;
+    }
+  } while((inheritedClass = tc->classTable->at(inheritedClass).superClassName) != "");
+
+  return false;
+}
+
 void TypeCheck::visitNewNode(NewNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
   if(classTable->find(node->identifier->name) == classTable->end()) {
     typeError(undefined_class);
   }
-  //TODO: Check args of expressionlist
+  // node->identifier->name refers to the class name
+  std::string className = node->identifier->name;
+  bool constructorExists = false;
+  //Checking if constructor is present in methodTable of class, or all super classes
+  do {
+    auto *methods = this->classTable->at(className).methods;
+    if(methods->find(className) != methods->end()) {
+      constructorExists = true;
+      break;
+    }
+  } while((className = this->classTable->at(className).superClassName) != "");
+
+  if(constructorExists) { // Sid said a class doesn't have to have a constructor so there's no error if it doesn't exist
+    //Get constructor from methods of the class
+    MethodInfo classMethods;
+    auto *methods = this->classTable->at(className).methods;
+    if(methods->find(className) != methods->end()) {
+      classMethods = (*methods)[className];
+    }
+    else {
+      std::cout << "The constructor should exist, but can't find it in methods table???\n";
+    }
+    auto *parameters = classMethods.parameters;
+    if(node->expression_list->size() != parameters->size()) {
+      typeError(argument_number_mismatch);
+    }
+
+    auto argsIter = node->expression_list->begin();
+    auto paramIter = parameters->begin();
+    //Cool for loop to increment and check two things at once
+    for( ; paramIter != parameters->end(); ++paramIter, ++argsIter) {
+      if(paramIter->baseType != (*argsIter)->basetype) {
+        typeError(argument_type_mismatch);
+      }
+      //If they are both of type bt_object, I have to check they are referencing a valid class or super class
+      else if((*argsIter)->basetype == bt_object && !classIsInherited(this, (*argsIter)->objectClassName, paramIter->objectClassName)) {
+        typeError(argument_type_mismatch);
+      }
+    }
+
+
+  }
+  else { //No constructor means it must have 0 args, check for 0 args
+    if(node->expression_list->size() != 0) {
+      typeError(argument_number_mismatch);
+    }
+  }
 
   node->objectClassName = node->identifier->name;
   node->basetype = bt_object;
