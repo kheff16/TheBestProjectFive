@@ -526,7 +526,7 @@ void TypeCheck::visitEqualNode(EqualNode* node) {
 void TypeCheck::visitAndNode(AndNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
-  if(node->expression_1->basetype != bt_boolean && node->expression_2->basetype != bt_boolean) {
+  if(node->expression_1->basetype != bt_boolean || node->expression_2->basetype != bt_boolean) {
     typeError(expression_type_mismatch);
   }
   node->basetype = bt_boolean;
@@ -535,7 +535,7 @@ void TypeCheck::visitAndNode(AndNode* node) {
 void TypeCheck::visitOrNode(OrNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
-  if(node->expression_1->basetype != bt_boolean && node->expression_2->basetype != bt_boolean) {
+  if(node->expression_1->basetype != bt_boolean || node->expression_2->basetype != bt_boolean) {
     typeError(expression_type_mismatch);
   }
   node->basetype = bt_boolean;
