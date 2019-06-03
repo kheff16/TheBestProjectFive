@@ -372,6 +372,9 @@ void TypeCheck::visitAssignmentNode(AssignmentNode* node) {
   ClassInfo c;
   BaseType  b, f = node->expression->basetype, test;
   CompoundType a;
+  if(!currentVariableTable->count(node->identifier_1->name)) {
+    typeError(undefined_variable);
+  }
 
   if(node->identifier_2 == NULL){
     // Only need to check whether the id is of the same type
@@ -408,7 +411,7 @@ void TypeCheck::visitAssignmentNode(AssignmentNode* node) {
       }
     }
     else{
-      typeError(undefined_class);
+      typeError(not_object);
     }
   }
 }
