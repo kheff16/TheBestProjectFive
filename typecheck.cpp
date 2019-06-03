@@ -109,8 +109,6 @@ void TypeCheck::visitClassNode(ClassNode* node) {
   currentMemberOffset = -4;
   currentLocalOffset = -1;
 
-  node->visit_children(this); // Visits Declaration Node then Method Node
-  
   if(node->identifier_2 == NULL) {
     c.superClassName = "";
   }
@@ -118,14 +116,18 @@ void TypeCheck::visitClassNode(ClassNode* node) {
     c.superClassName = node->identifier_2->name;
   }
 
+
+  c.membersSize = -(currentMemberOffset) * (c.members->size());
+  classTable->insert(std::pair<std::string, ClassInfo> (currentClassName, c));
+
+  node->visit_children(this); // Visits Declaration Node then Method Node
+  
   /*
     Set all the tables
     iterate though decl list and call visitDeclNode
     set offset
      ''' '' '' ' ' ' ' 'memberlist
   */
-  c.membersSize = -(currentMemberOffset) * (c.members->size());
-  classTable->insert(std::pair<std::string, ClassInfo> (currentClassName, c));
 
 }
 
@@ -141,26 +143,6 @@ void TypeCheck::visitMethodNode(MethodNode* node) {
   currentLocalOffset = 0;
   currentParameterOffset = 8;
   m.parameters = new std::list<CompoundType> ();
-
-  node->visit_children(this);
-  
-
-  node->basetype = node->type->basetype;
-
-  if(node->basetype == bt_object){
-        node->objectClassName = node->type->objectClassName;
-      }
-      else{
-        node->objectClassName = "";
-      }
-  
-  //TODO: Is setting objectClassName right when we don't know the exact basetype?
-  c.baseType = node->basetype;
-  c.objectClassName = node->objectClassName;
-  
-  m.returnType = c;
-
-  m.localsSize = -(currentLocalOffset);
 
   // Here we insert the method parameters
   
@@ -183,6 +165,21 @@ void TypeCheck::visitMethodNode(MethodNode* node) {
 
     currentVariableTable->insert(std::pair<std::string, VariableInfo> ((*iter)->identifier->name, *v));
   }
+
+  node->visit_children(this);
+  
+
+  node->basetype = node->type->basetype;
+
+  //TODO: Is setting objectClassName right when we don't know the exact basetype?
+  c.baseType = node->basetype;
+  c.objectClassName = node->objectClassName;
+  
+  m.returnType = c;
+
+  m.localsSize = -(currentLocalOffset);
+
+  
 
   ReturnStatementNode* returnState = node->methodbody->returnstatement;
   BaseType nodeType = node->type->basetype;
@@ -284,12 +281,98 @@ void TypeCheck::visitReturnStatementNode(ReturnStatementNode* node) {
 
 }
 
+
+bool isSubClass(TypeCheck *visit, std::string subClass, std::string superClass) {
+    do {
+        if (subClass == superClass) {
+            return true;
+        }
+    } while ((subClass = visit->classTable->at(subClass).superClassName) != "");
+    return false;
+}
+
+MethodInfo methodFromId(TypeCheck *visit, std::string id, std::string mClass){
+  do{
+    auto *methods = visit->classTable->at(mClass).methods;
+    if(methods->find(id) != methods->end()){
+      return (*methods)[id];
+    }
+
+  }while((mClass = visit->classTable->at(mClass).superClassName) != "");
+
+  std::cout << "Error Method does not exist";
+  exit(1);
+}
+
+bool definedClass(TypeCheck *visit,std::string mClass){
+  if(visit->classTable->find(mClass) != visit->classTable->end()){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
+bool definedMember(TypeCheck *visit, std::string id, std::string mClass) {
+    do {
+        if (visit->classTable->at(mClass).members->find(id) != visit->classTable->at(mClass).members->end()) {
+            return true;
+        }
+    } while ((mClass = visit->classTable->at(mClass).superClassName) != "");
+    // If we don't find the member in the class or superclasses then, we return false
+    return false;
+}
+
+
+bool definedMethod(TypeCheck *visit, std::string id, std::string mClass) {
+    do {
+        if (visit->classTable->at(mClass).methods->find(id) != visit->classTable->at(mClass).methods->end()) {
+            return true;
+        }
+    } while ((mClass = visit->classTable->at(mClass).superClassName) != "");
+    // No method in the current class or super classes
+    return false;
+}
+
+bool definedVar(TypeCheck *visit, std::string id) {
+    if (visit->currentVariableTable->find(id) != visit->currentVariableTable->end()) {
+        return true;// Variable exists as local variable or parameter
+    } 
+    else { 
+        return definedMember(visit, id, visit->currentClassName); // Check if variable exists as member 
+    }
+}
+
+CompoundType memberType(TypeCheck *visit, std::string id, std::string mClass) {
+    do {
+        auto thisClassMembs = visit->classTable->at(mClass).members;
+        if (thisClassMembs->find(id) != thisClassMembs->end()) {
+            return thisClassMembs->at(id).type;
+        }
+    } while ((mClass = visit->classTable->at(mClass).superClassName) != "");
+    CompoundType a;
+    a.baseType = bt_integer;
+    a.objectClassName = "lol";
+    return a;
+}
+
+CompoundType varType(TypeCheck *visit, std::string id) {
+    if (visit->currentVariableTable->find(id) == visit->currentVariableTable->end()) {
+        return memberType(visit, id, visit->currentClassName); // Check if variable exists as member 
+    } else { // Variable is a local variable or parameter
+        return visit->currentVariableTable->at(id).type;
+    }
+}
+
+
 void TypeCheck::visitAssignmentNode(AssignmentNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
   VariableInfo vi;
   ClassInfo c;
-  BaseType  b;
+  BaseType  b, f = node->expression->basetype, test;
+  CompoundType a;
+
   if(node->identifier_2 == NULL){
     // Only need to check whether the id is of the same type
     int i = currentVariableTable->count(node->identifier_1->name);
@@ -297,7 +380,7 @@ void TypeCheck::visitAssignmentNode(AssignmentNode* node) {
       vi = (*currentVariableTable)[node->identifier_1->name];
       b = vi.type.baseType;
 
-      if(node->expression->basetype != b){
+      if(b != f){ // b is before f...
         typeError(assignment_type_mismatch);
       }
     }
@@ -308,18 +391,20 @@ void TypeCheck::visitAssignmentNode(AssignmentNode* node) {
   }
   else{
     // Need to check if T_id.T_id is of the same type as the expression
-    if(classTable->count(node->identifier_1->name)){
-      // HOPE THIS WORKS
-      c = (*classTable)[node->identifier_1->name];
-      if(c.members->count(node->identifier_2->name)){
-        vi = (*(c.members))[node->identifier_1->name];
-        b = vi.type.baseType;
-        if(node->expression->basetype != b){
-          typeError(assignment_type_mismatch);
-        }
-      }
-      else{
+    // Find what type.objectClassName of id1 is...
+    a = varType(this, node->identifier_1->name);
+    if(classTable->count(a.objectClassName)){
+      //c = (*classTable)[a.objectClassName];
+      // Can't just check one class... have to check superclasses too
+      a = memberType(this, node->identifier_2->name, a.objectClassName);
+      if( a.objectClassName == "lol") 
         typeError(undefined_member);
+
+      test = node->expression->basetype;
+
+      if(test != a.baseType){
+        // CAUSING 22.good to break
+        typeError(assignment_type_mismatch);
       }
     }
     else{
@@ -338,8 +423,9 @@ void TypeCheck::visitCallNode(CallNode* node) {
 
 void TypeCheck::visitIfElseNode(IfElseNode* node) {
   // WRITEME: Replace with code if necessary
-  auto e = (*node->statement_list_1->begin());
   node->visit_children(this);
+  auto e = node->expression->basetype;
+  
   if(node->expression->basetype != bt_boolean){
     
     typeError(if_predicate_type_mismatch);
@@ -480,58 +566,81 @@ void TypeCheck::visitNegationNode(NegationNode* node) {
 void TypeCheck::visitMethodCallNode(MethodCallNode* node) {
   // WRITEME: Replace with code if necessary
   node->visit_children(this);
+  std::string mClass, methodId, objId;
+  MethodInfo methodInfo;
   //Type defined in MethodInfo
+  if(node->identifier_2){
+    // Then there is an object that this object was called on... find it in the current context...  
+    objId = node->identifier_1->name;
+    methodId = node->identifier_2->name;
+    if(!definedVar(this, objId)){
+      typeError(undefined_variable);
+    }
+    else if(varType(this, objId).baseType != bt_object){
+      typeError(not_object);
+    }
+    mClass = varType(this, objId).objectClassName;
+    if(!definedMethod(this, methodId, varType(this, objId).objectClassName)){
+        typeError(undefined_method);
+    }
+  }
+  else{
+    // Explicit call on current class
+    mClass = currentClassName;
+    methodId = node->identifier_1->name;
+    if (!definedMethod(this, methodId, mClass)) {
+          typeError(undefined_method);
+      }
+  }
+
+  methodInfo = methodFromId(this, methodId, mClass);
+  auto *params = methodInfo.parameters;
+
+  // Check if correct size
+  if(params->size() != node->expression_list->size()){
+    typeError(argument_number_mismatch);
+  }
+  
+  auto paramIT = params->begin();
+  auto methodCallIT = node->expression_list->begin();
+
+  // now assume same size
+  for(; paramIT != params->end(); ++paramIT, ++methodCallIT) {
+        if (paramIT->baseType != (*methodCallIT)->basetype || (!isSubClass(this, (*methodCallIT)->objectClassName, paramIT->objectClassName) && (*methodCallIT)->basetype == bt_object)) {
+            typeError(argument_type_mismatch);
+        }
+    }
+  
+  node->basetype = methodInfo.returnType.baseType;
+  node->objectClassName = methodInfo.returnType.objectClassName;
+
 }
 
 void TypeCheck::visitMemberAccessNode(MemberAccessNode* node) {
   // WRITEME: Replace with code if necessary
-
-  std::string mClass = currentClassName;
-  std::string id1 = node->identifier_1->name;
-  std::string id2 = node->identifier_2->name;
-  CompoundType memAccess; // This will store the type of the MemberAccess
-  std::map<std::string, VariableInfo>::iterator it;
-
-  // CHECK IF IN CURRENT METHOD
-  if(currentVariableTable->count(id1)){
-    memAccess.baseType = (*currentVariableTable)[id1].type.baseType;
-    memAccess.objectClassName = (*currentVariableTable)[id1].type.objectClassName;
-
-    node->basetype = (classTable->at(memAccess.objectClassName)).members->at(id2).type.baseType; // This is the type we need to check (the type of the memberAccessNode)
-    node->objectClassName = (classTable->at(memAccess.objectClassName)).members->at(id2).type.objectClassName;
-  }
-  else{
-    // CHECK IF IN CURRENT CLASS OR SUPERCLASSES
-    do{
-      // HERE AGAIN FIX THIS 
-      // OR ELSE
-      
-      
-      if((classTable->at(currentClassName)).members->find(id1) != (classTable->at(currentClassName)).members->end()){
-        // found member in class
-        memAccess = (classTable->at(currentClassName)).members->at(id1).type;
-        break;
-      }
-      else if(classTable->at(currentClassName).superClassName == ""){
-        // NEVER FOUND MEMBER AND NO MORE SUPER CLASSES
-        // THROW SOME TYPE ERROR
-        //typeError();
-      }
-    }while((mClass = classTable->at(mClass).superClassName) != "");
-    // FOUND member and set memAccess to the class it is using
-    auto a = (classTable->at(memAccess.objectClassName)).members;
-    // a holds members of the class we needed to find to see what we are accessing
-    node->basetype = a->at(id2).type.baseType; // This is the type we need to check (the type of the memberAccessNode)
-    node->objectClassName = a->at(id2).type.objectClassName;
-  }
-
-  node->visit_children(this);
-  //Type defined in variableInfo
+    std::string objId = node->identifier_1->name;
+    std::string memId = node->identifier_2->name;
+    CompoundType a;
+    if (!definedVar(this, objId)) {
+        typeError(undefined_variable);
+    } else if (varType(this, objId).baseType != bt_object) {
+        typeError(not_object);
+    } else if (!definedMember(this, memId, varType(this, objId).objectClassName)) {
+        typeError(undefined_member);
+    }
+    a = memberType(this, memId, varType(this, objId).objectClassName);
+    node->basetype = a.baseType;
+    node->objectClassName = a.objectClassName;
 }
 
 void TypeCheck::visitVariableNode(VariableNode* node) {
   // WRITEME: Replace with code if necessary
-  std::string variableName = node->identifier->name;
+  std::string id = node->identifier->name;
+  if(!definedVar(this, id)){
+    typeError(undefined_variable);
+  }
+  node->basetype = varType(this, id).baseType;
+  node->objectClassName = varType(this, id).objectClassName;
   //If variable is not defined as local var or param, then it must be a member of the class
   // but how do I know which currentVariable table I'm looking at?
   // if(this->currentVariableTable->find(variableName) == this->currentVariableTable->end()) {
@@ -566,23 +675,23 @@ void TypeCheck::visitNewNode(NewNode* node) {
     typeError(undefined_class);
   }
   // node->identifier->name refers to the class name
-  std::string className = node->identifier->name;
+  std::string mClass = node->identifier->name;
   bool constructorExists = false;
   //Checking if constructor is present in methodTable of class, or all super classes
   do {
-    auto *methods = this->classTable->at(className).methods;
-    if(methods->find(className) != methods->end()) {
+    auto *methods = this->classTable->at(mClass).methods;
+    if(methods->find(mClass) != methods->end()) {
       constructorExists = true;
       break;
     }
-  } while((className = this->classTable->at(className).superClassName) != "");
+  } while((mClass = this->classTable->at(mClass).superClassName) != "");
 
   if(constructorExists) { // Sid said a class doesn't have to have a constructor so there's no error if it doesn't exist
     //Get constructor from methods of the class
     MethodInfo classMethods;
-    auto *methods = this->classTable->at(className).methods;
-    if(methods->find(className) != methods->end()) {
-      classMethods = (*methods)[className];
+    auto *methods = this->classTable->at(mClass).methods;
+    if(methods->find(mClass) != methods->end()) {
+      classMethods = (*methods)[mClass];
     }
     else {
       std::cout << "The constructor should exist, but can't find it in methods table???\n";
