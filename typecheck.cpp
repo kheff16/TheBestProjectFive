@@ -172,8 +172,8 @@ void TypeCheck::visitMethodNode(MethodNode* node) {
   node->basetype = node->type->basetype;
 
   //TODO: Is setting objectClassName right when we don't know the exact basetype?
-  c.baseType = node->basetype;
-  c.objectClassName = node->objectClassName;
+  c.baseType = node->type->basetype;
+  c.objectClassName = node->type->objectClassName;
   
   m.returnType = c;
 
@@ -300,7 +300,7 @@ MethodInfo methodFromId(TypeCheck *visit, std::string id, std::string mClass){
 
   }while((mClass = visit->classTable->at(mClass).superClassName) != "");
 
-  std::cout << "Error Method does not exist";
+  //std::cout << "Error Method does not exist";
   exit(1);
 }
 
@@ -697,7 +697,7 @@ void TypeCheck::visitNewNode(NewNode* node) {
       classMethods = (*methods)[mClass];
     }
     else {
-      std::cout << "The constructor should exist, but can't find it in methods table???\n";
+      //std::cout << "The constructor should exist, but can't find it in methods table???\n";
     }
     auto *parameters = classMethods.parameters;
     if(node->expression_list->size() != parameters->size()) {
