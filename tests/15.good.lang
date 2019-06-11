@@ -1,40 +1,37 @@
-class0 {
-    integer	member0;
+classA {
 
-    f0(boolean arg0) -> integer {
-        
-        return 236 * member0;
+       f0(integer x, boolean y) -> integer {
+       	    integer val;
 
-    }
+       	    if y {
+	       val = x * x;
+	    } else {
+	       val = x / 2;
+	    }
 
-    f1(integer arg0) -> integer {
-        
-        return -arg0;
+	    return val;
+       }
 
-    }
+       doAll() -> none {
+           integer i, x;
+	   i = 0;
+	   x = 2;
 
-    class0(boolean arg0, integer arg1) -> none {
-        
+	   while 5 > i {
+	       x = f0(x, 2 >= i);
+	       i = i + 1;
+	       print x;
+	   }       
 
-    }
-
+       }
 
 }
 
 Main {
 
-
-    main() -> none {
-        class0 local0;
-        integer local1;
-        class0 local2;
-        
-        local1 = local1;
-        local1 = 74 / 152;
-        print 41 - local0.member0 / local0.member0;
-
-    }
-
+     main() -> none {
+     	    classA a;
+	    a.doAll();
+     }
 
 }
-
